@@ -1,0 +1,25 @@
+
+====================================================================================================
+Date: 2026-07-20
+Time: 07:48:52
+
+        Report Type : {type(final_report).__name__}
+        Keys        : {list(final_report.keys())}
+
+        Research
+        --------
+        Summary Length : {len(final_report['research'].get('summary', ''))}
+        Insights       : {len(final_report['research'].get('market_insights', []))}
+        Opportunities  : {len(final_report['research'].get('marketing_opportunities', []))}
+        Constraints    : {len(final_report['research'].get('constraints', []))}
+
+        Planner
+        -------
+        Campaign Name : {final_report['planner'].get('campaign_name')}
+        Schedule Items: {len(final_report['planner'].get('schedule', []))}
+
+        Copywriter
+        ----------
+        Theme : {final_report['copywriter'].get('campaign_theme')}
+        Posts : {len(final_report['copywriter'].get('posts', []))}
+        
