@@ -1,105 +1,162 @@
 import asyncio
 import json
+import config
+from services.openai_client import client
+from utils.helpers import load_prompt , clean_json
 from utils.logger import log
 from agents.researcher import run as researcher_agent
 from agents.planner import run as planner_agent
 from agents.copywriter import run as copywriter_agent
-from agents.synthesizer import run as synthesizer_agent
 
 from utils.formatter import (
     format_research,
     format_planner,
     format_copywriter,
-    format_validation
 )
+SYSTEM_PROMPT = load_prompt("orchestrator_prompt.txt")
 
 
 
-async def run(user_request: str) :
-    """
-    Marketing Workflow
 
-    1. Research the topic.
-    2. Pass research to Planner & Copywriter.
-    3. Run them in parallel.
-    4. Generate the final campaign report.
-    """
+async def run(user_request: str):
 
     print("=" * 60)
     print("🚀 Marketing Workflow Started")
     print("=" * 60)
 
-    # ---------------------------------------------------------
-    # Step 1: Research
-    # ---------------------------------------------------------
+    response = await asyncio.to_thread(
+        client.responses.create,
+        model=config.ALIBABA_MODEL,
+        instructions=SYSTEM_PROMPT,
+        input=user_request,
+        temperature=0.2
+    )
+    raw = clean_json(response.output_text)
 
-    research = await researcher_agent(user_request)
+    try:
+        result = json.loads(raw)
+    except json.JSONDecodeError as e:
+        raise ValueError(
+            f"Planner returned invalid JSON.\n\n"
+            f"Response:\n{raw}"
+        ) 
+    
+    # print("=" * 100)
+    # print("Research Task")
+    # print(f"{result.get("research_task")}")
+     
+    # print("=" * 100)
+    # print("Planner Task")
+    # print(f"{result.get("planner_task")}")
 
-    # ---------------------------------------------------------
-    # Step 2: Shared input
-    # ---------------------------------------------------------
+    # print("=" * 100)
+    # print("Copywright Task")
+    # print(f"{result.get("copywriter_task")}")
 
-    shared_input = json.dumps(
+    # =====================================================
+    # Research
+    # =====================================================
+
+    research = await researcher_agent(result.get("research_task"))
+
+    print(research)
+    
+
+    # =====================================================
+    # Planner + Copywriter (Parallel)
+    # =====================================================
+
+    planner_input = json.dumps(
         {
-            "user_request": user_request,
+            "user_request": result.get("planner_task"),
+            "research": research,
+        },
+        ensure_ascii=False,
+        indent=2,
+    )
+    copyright_input = json.dumps(
+        {
+            "user_request": result.get("copywriter_task"),
             "research": research,
         },
         ensure_ascii=False,
         indent=2,
     )
 
-    # ---------------------------------------------------------
-    # Step 3: Planner + Copywriter
-    # ---------------------------------------------------------
-
     planner, copywriter = await asyncio.gather(
-        planner_agent(shared_input),
-        copywriter_agent(shared_input),
-    )
-
-    # ---------------------------------------------------------
-    # Step 4: Synthesizer
-    # ---------------------------------------------------------
-
-    final_report = await synthesizer_agent(
-        user_request=user_request,
-        research=research,
-        planner=planner,
-        copywriting=copywriter,
+        planner_agent(planner_input),
+        copywriter_agent(copyright_input),
     )
 
     print("✅ Marketing Workflow Finished")
     print("=" * 60)
 
-    log("""
-        Report Type : {type(final_report).__name__}
-        Keys        : {list(final_report.keys())}
+    # =====================================================
+    # Debug Logger
+    # =====================================================
 
-        Research
-        --------
-        Summary Length : {len(final_report['research'].get('summary', ''))}
-        Insights       : {len(final_report['research'].get('market_insights', []))}
-        Opportunities  : {len(final_report['research'].get('marketing_opportunities', []))}
-        Constraints    : {len(final_report['research'].get('constraints', []))}
+    log(f"""
+            ============================================================
+            MARKETING WORKFLOW DEBUG
+            ============================================================
 
-        Planner
-        -------
-        Campaign Name : {final_report['planner'].get('campaign_name')}
-        Schedule Items: {len(final_report['planner'].get('schedule', []))}
+            User Request
+            ------------
+            {user_request}
 
-        Copywriter
-        ----------
-        Theme : {final_report['copywriter'].get('campaign_theme')}
-        Posts : {len(final_report['copywriter'].get('posts', []))}
-        """)
+            Research
+            --------
+            Type          : {type(research).__name__}
+            Keys          : {list(research.keys()) if isinstance(research, dict) else "N/A"}
 
+            Summary Length: {len(research.get("summary", "")) if isinstance(research, dict) else 0}
 
+            Insights      : {len(research.get("research", {}).get("market_insights", []))}
+            Opportunities : {len(research.get("research", {}).get("marketing_opportunities", []))}
+            Constraints   : {len(research.get("research", {}).get("constraints", []))}
+            Sources       : {len(research.get("sources", []))}
+
+            Planner
+            -------
+            Type          : {type(planner).__name__}
+            Keys          : {list(planner.keys()) if isinstance(planner, dict) else "N/A"}
+
+            Goal          : {planner.get("campaign_overview", {}).get("goal", "")}
+            Stages        : {len(planner.get("campaign_overview", {}).get("stages", []))}
+            Channels      : {len(planner.get("channel_strategy", []))}
+            Calendar      : {len(planner.get("content_calendar", []))}
+            KPIs          : {len(planner.get("kpis", []))}
+            Assumptions   : {len(planner.get("assumptions", []))}
+
+            Copywriter
+            ----------
+            Type          : {type(copywriter).__name__}
+            Keys          : {list(copywriter.keys()) if isinstance(copywriter, dict) else "N/A"}
+
+            Campaign Theme: {copywriter.get("campaign_theme", "")}
+            Posts         : {len(copywriter.get("posts", []))}
+
+            ============================================================
+            RAW RESEARCH
+            ============================================================
+
+            {json.dumps(research, ensure_ascii=False, indent=2)}
+
+            ============================================================
+            RAW PLANNER
+            ============================================================
+
+            {json.dumps(planner, ensure_ascii=False, indent=2)}
+
+            ============================================================
+            RAW COPYWRITER
+            ============================================================
+
+            {json.dumps(copywriter, ensure_ascii=False, indent=2)}
+""")
 
     return (
-    format_research(final_report),
-    format_planner(final_report),
-    format_copywriter(final_report),
-    format_validation(final_report)
-    
-    
-)
+        format_research(research),
+        format_planner(planner),
+        format_copywriter(copywriter),
+    )

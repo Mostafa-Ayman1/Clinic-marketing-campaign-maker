@@ -118,14 +118,7 @@ def create_ui(orchestrator):
                             value="<p style='color:gray'>Waiting for copywriter...</p>"
                         )
 
-                    # ------------------------------------------
-                    # Validation
-                    # ------------------------------------------
-
-                    with gr.Tab("✅ Validation"):
-                        validation_output = gr.HTML(
-                            value="<p style='color:gray'>Waiting for validation...</p>"
-                        )
+                   
 
         # ==========================================================
         # Event Listeners
@@ -138,7 +131,6 @@ def create_ui(orchestrator):
                 research_output,
                 planner_output,
                 copywriter_output,
-                validation_output,
             ],
         )
 
@@ -148,8 +140,7 @@ def create_ui(orchestrator):
             outputs=[
                 research_output,
                 planner_output,
-                copywriter_output,
-                validation_output,
+                copywriter_output
             ],
         )
 
@@ -159,8 +150,7 @@ def create_ui(orchestrator):
                 user_input,
                 research_output,
                 planner_output,
-                copywriter_output,
-                validation_output,
+                copywriter_output
             ],
         )
 

@@ -1,5 +1,5 @@
 from services.openai_client import client
-from utils.helpers import load_prompt
+from utils.helpers import load_prompt ,clean_json
 from ddgs import DDGS
 import config
 import json
@@ -75,9 +75,11 @@ async def run(user_request: str) -> dict:
             ),
         )
 
+    raw = clean_json(response.output_text) 
+
     print("✅ Research Agent Finished\n")
     try:
-        return json.loads(response.output_text)
+        return json.loads(raw)
     except json.JSONDecodeError:
         return {
             "error": "Invalid JSON returned by LLM",

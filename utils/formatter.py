@@ -43,93 +43,194 @@ def card(title: str, body: str) -> str:
 
 def format_research(report: dict) -> str:
 
+    summary = report.get("summary", "")
+
     research = report.get("research", {})
-    print("="*80)
-    print("Research Format")
-    print(report)
-    print(research)
-    print("="*80)
 
-    summary = research.get("summary", "")
+    market_insights = research.get("market_insights", [])
+    marketing_opportunities = research.get("marketing_opportunities", [])
+    constraints = research.get("constraints", [])
 
-    research_data = research.get("research", {})
-
-    market_insights = research_data.get("market_insights", [])
-    marketing_opportunities = research_data.get("marketing_opportunities", [])
-    constraints = research_data.get("constraints", [])
+    limitations = report.get("limitations", [])
+    sources = report.get("sources", [])
 
     html = f"""
     <h2 style="color:#ffffff;">🧠 Research Summary</h2>
-
-    <p style="color:#d1d5db;">{escape(summary)}</p>
+    <p style="color:#d1d5db; line-height:1.7;">
+        {escape(summary)}
+    </p>
     """
 
-    # ==========================================================
+    # ======================================================
     # Market Insights
-    # ==========================================================
+    # ======================================================
 
     if market_insights:
 
-        items = ""
+        body = ""
 
         for item in market_insights:
 
-            items += f"""
-            <li style="margin-bottom:8px;">
-                <b style="color:#ffffff;">{escape(item.get("topic", ""))}</b><br>
-                <span style="color:#9ca3af;">{escape(item.get("detail", ""))}</span>
-            </li>
+            body += f"""
+            <li style="margin-bottom:14px;">
+                <b style="color:white;">
+                    {escape(item.get("topic",""))}
+                </b><br>
+
+                <span style="color:#d1d5db;">
+                    {escape(item.get("detail",""))}
+                </span>
             """
+
+            if item.get("quote"):
+                body += f"""
+                <blockquote style="
+                    margin-top:8px;
+                    color:#9ca3af;
+                    border-left:3px solid #3b82f6;
+                    padding-left:10px;
+                    font-style:italic;
+                ">
+                    "{escape(item['quote'])}"
+                </blockquote>
+                """
+
+            if item.get("source_indexes"):
+                indexes = ", ".join(map(str, item["source_indexes"]))
+
+                body += f"""
+                <div style="color:#60a5fa;font-size:13px;">
+                    Sources: {indexes}
+                </div>
+                """
+
+            body += "</li>"
 
         html += card(
             "📊 Market Insights",
-            f"<ul style='padding-left:20px;'>{items}</ul>"
+            f"<ul>{body}</ul>"
         )
 
-    # ==========================================================
+    # ======================================================
     # Marketing Opportunities
-    # ==========================================================
+    # ======================================================
 
     if marketing_opportunities:
 
-        items = ""
+        body = ""
 
         for item in marketing_opportunities:
 
-            items += f"""
-            <li style="margin-bottom:8px;">
-                <b style="color:#ffffff;">{escape(item.get("topic", ""))}</b><br>
-                <span style="color:#9ca3af;">{escape(item.get("detail", ""))}</span>
+            indexes = ", ".join(
+                map(str, item.get("source_indexes", []))
+            )
+
+            body += f"""
+            <li style="margin-bottom:12px;">
+                <b style="color:white;">
+                    {escape(item.get("topic",""))}
+                </b><br>
+
+                <span style="color:#d1d5db;">
+                    {escape(item.get("detail",""))}
+                </span>
+
+                <div style="color:#60a5fa;font-size:13px;">
+                    Sources: {indexes}
+                </div>
             </li>
             """
 
         html += card(
             "🚀 Marketing Opportunities",
-            f"<ul style='padding-left:20px;'>{items}</ul>"
+            f"<ul>{body}</ul>"
         )
 
-    # ==========================================================
+    # ======================================================
     # Constraints
-    # ==========================================================
+    # ======================================================
 
     if constraints:
 
-        items = ""
+        body = ""
 
         for item in constraints:
 
-            if isinstance(item, dict):
-                text = item.get("detail", "")
-            else:
-                text = str(item)
+            indexes = ", ".join(
+                map(str, item.get("source_indexes", []))
+            )
 
-            items += f"""
-            <li style="margin-bottom:8px; color:#9ca3af;">{escape(text)}</li>
+            body += f"""
+            <li style="margin-bottom:10px;">
+                <span style="color:#d1d5db;">
+                    {escape(item.get("detail",""))}
+                </span>
+
+                <div style="color:#60a5fa;font-size:13px;">
+                    Sources: {indexes}
+                </div>
+            </li>
             """
 
         html += card(
             "⚠️ Constraints",
-            f"<ul style='padding-left:20px;'>{items}</ul>"
+            f"<ul>{body}</ul>"
+        )
+
+    # ======================================================
+    # Limitations
+    # ======================================================
+
+    if limitations:
+
+        body = ""
+
+        for item in limitations:
+
+            body += f"""
+            <li style="margin-bottom:8px;color:#d1d5db;">
+                {escape(item)}
+            </li>
+            """
+
+        html += card(
+            "❗ Limitations",
+            f"<ul>{body}</ul>"
+        )
+
+    # ======================================================
+    # Sources
+    # ======================================================
+
+    if sources:
+
+        body = ""
+
+        for src in sources:
+
+            body += f"""
+            <li style="margin-bottom:10px;">
+                <b style="color:white;">
+                    [{src.get("index")}]
+                </b>
+
+                {escape(src.get("title",""))}
+
+                <br>
+
+                <a
+                    href="{escape(src.get("url",""))}"
+                    target="_blank"
+                    style="color:#60a5fa;"
+                >
+                    {escape(src.get("url",""))}
+                </a>
+            </li>
+            """
+
+        html += card(
+            "📚 Sources",
+            f"<ul>{body}</ul>"
         )
 
     return html
@@ -138,142 +239,305 @@ def format_research(report: dict) -> str:
 # ==========================================================
 # Planner
 # ==========================================================
-
 def format_planner(report: dict) -> str:
 
-    planner = report["planner"]
+    planner = report
 
-    rows = ""
+    overview = planner.get("campaign_overview", {})
+    stages = overview.get("stages", [])
 
-    for item in planner["schedule"]:
+    channels = planner.get("channel_strategy", [])
+    calendar = planner.get("content_calendar", [])
+    kpis = planner.get("kpis", [])
+    assumptions = planner.get("assumptions", [])
 
-        rows += f"""
-        <tr style="border-bottom: 1px solid #374151;">
-            <td style="padding:10px 8px;">{item["date"]}</td>
-            <td style="padding:10px 8px;">{item["time"]}</td>
-            <td style="padding:10px 8px;">{item["platform"]}</td>
-            <td style="padding:10px 8px;">{escape(item["post_reference"])}</td>
-        </tr>
-        """
+    html = ""
 
-    table = f"""
-    <table style="
-        width:100%;
-        border-collapse:collapse;
-        text-align:left;
-        color:#d1d5db;
-    ">
+    # =====================================================
+    # Campaign Goal
+    # =====================================================
 
-        <thead>
-            <tr style="background:#374151; color:#ffffff;"> <!-- رأس جدول غامق -->
-                <th style="padding:12px 8px; border-top-left-radius:8px;">Date</th>
-                <th style="padding:12px 8px;">Time</th>
-                <th style="padding:12px 8px;">Platform</th>
-                <th style="padding:12px 8px; border-top-right-radius:8px;">Post</th>
-            </tr>
-        </thead>
-
-        <tbody>
-            {rows}
-        </tbody>
-
-    </table>
-    """
-
-    body = f"""
-    <p style="margin-bottom:8px;"><b style="color:#ffffff;">Campaign:</b> <span style="color:#9ca3af;">{escape(planner["campaign_name"])}</span></p>
-
-    <p style="margin-bottom:20px;"><b style="color:#ffffff;">Duration:</b> 
-    <span style="color:#9ca3af;">{planner["start_date"]} &rarr; {planner["end_date"]}</span></p>
-
-    {table}
-    """
-
-    return card("📅 Publishing Schedule", body)
-
-
-# ==========================================================
-# Copywriter
-# ==========================================================
-
-def format_copywriter(report: dict) -> str:
-    
-    copy = report["copywriter"]
-
-    html = f"""
-    <h2 style="color:#ffffff;">✍️ Campaign Theme</h2>
-
-    <p style="color:#d1d5db; margin-bottom:24px;">{escape(copy["campaign_theme"])}</p>
-    """
-
-    for post in copy["posts"]:
-
-        hashtags = " ".join(post["hashtags"])
-
-        body = f"""
-
-        <div style="margin-bottom:16px;">{badge(post["platform"])}</div>
-
-        <p><b style="color:#ffffff;">Type</b><br>
-        <span style="color:#9ca3af;">{escape(post["post_type"])}</span></p>
-
-        <p><b style="color:#ffffff;">Headline</b></p>
-
-        <p style="color:#d1d5db; font-size:1.1em;">{escape(post["headline"])}</p>
-
-        <p><b style="color:#ffffff;">Caption</b></p>
-
-        <p style="white-space:pre-wrap; color:#9ca3af; background:#111827; padding:12px; border-radius:8px; border:1px solid #374151;">
-{escape(post["caption"])}
+    html += card(
+        "🎯 Campaign Goal",
+        f"""
+        <p style="color:#d1d5db;line-height:1.7;">
+            {escape(overview.get("goal",""))}
         </p>
+        """
+    )
 
-        <p><b style="color:#ffffff;">Hashtags</b></p>
+    # =====================================================
+    # Campaign Stages
+    # =====================================================
 
-        <p style="color:#60a5fa;">{escape(hashtags)}</p> <!-- لون أزرق فاتح للهاشتاجات -->
+    if stages:
 
-        <p><b style="color:#ffffff;">CTA</b></p>
+        body = ""
 
-        <p style="color:#d1d5db;">{escape(post["cta"])}</p>
+        for stage in stages:
 
+            body += f"""
+            <div style="
+                background:#1f2937;
+                padding:14px;
+                margin-bottom:12px;
+                border-radius:10px;
+            ">
+
+                <h4 style="margin:0;color:white;">
+                    {escape(stage.get("stage",""))}
+                </h4>
+
+                <p style="margin:8px 0;color:#d1d5db;">
+                    {escape(stage.get("purpose",""))}
+                </p>
+
+                <span style="color:#60a5fa;">
+                    ⏳ {escape(stage.get("duration",""))}
+                </span>
+
+            </div>
+            """
+
+        html += card("🚀 Campaign Stages", body)
+
+    # =====================================================
+    # Channel Strategy
+    # =====================================================
+
+    if channels:
+
+        rows = ""
+
+        for item in channels:
+
+            priority = item.get("priority", "").capitalize()
+
+            rows += f"""
+            <tr>
+                <td>{escape(item.get("channel",""))}</td>
+                <td>{escape(item.get("rationale",""))}</td>
+                <td>{priority}</td>
+            </tr>
+            """
+
+        table = f"""
+        <table style="width:100%;color:#d1d5db;border-collapse:collapse;">
+
+            <thead>
+
+                <tr style="background:#374151;color:white;">
+
+                    <th>Channel</th>
+                    <th>Why</th>
+                    <th>Priority</th>
+
+                </tr>
+
+            </thead>
+
+            <tbody>
+
+                {rows}
+
+            </tbody>
+
+        </table>
         """
 
-        html += card(post["platform"] + " Post", body)
+        html += card("📣 Channel Strategy", table)
+
+    # =====================================================
+    # Content Calendar
+    # =====================================================
+
+    if calendar:
+
+        rows = ""
+
+        for item in calendar:
+
+            brief = item.get("content_brief", {})
+
+            rows += f"""
+            <tr>
+
+                <td>{escape(item.get("date_or_timing",""))}</td>
+
+                <td>{escape(item.get("stage",""))}</td>
+
+                <td>{escape(item.get("channel",""))}</td>
+
+                <td>{escape(brief.get("objective",""))}</td>
+
+                <td>{escape(brief.get("format",""))}</td>
+
+                <td>{escape(brief.get("cta_direction",""))}</td>
+
+            </tr>
+            """
+
+        table = f"""
+        <table style="width:100%;color:#d1d5db;border-collapse:collapse;">
+
+            <thead>
+
+                <tr style="background:#374151;color:white;">
+
+                    <th>Date</th>
+                    <th>Stage</th>
+                    <th>Channel</th>
+                    <th>Objective</th>
+                    <th>Format</th>
+                    <th>CTA</th>
+
+                </tr>
+
+            </thead>
+
+            <tbody>
+
+                {rows}
+
+            </tbody>
+
+        </table>
+        """
+
+        html += card("📅 Content Calendar", table)
+
+    # =====================================================
+    # KPIs
+    # =====================================================
+
+    if kpis:
+
+        body = ""
+
+        for item in kpis:
+
+            body += f"""
+            <div style="
+                background:#1f2937;
+                padding:12px;
+                border-radius:10px;
+                margin-bottom:10px;
+            ">
+
+                <b style="color:white;">
+                    {escape(item.get("metric",""))}
+                </b>
+
+                <br>
+
+                <span style="color:#9ca3af;">
+                    Stage:
+                    {escape(item.get("stage",""))}
+                </span>
+
+                <br>
+
+                <span style="color:#22c55e;">
+                    Target:
+                    {escape(item.get("target",""))}
+                </span>
+
+            </div>
+            """
+
+        html += card("📈 KPIs", body)
+
+    # =====================================================
+    # Assumptions
+    # =====================================================
+
+    if assumptions:
+
+        body = "<ul>"
+
+        for assumption in assumptions:
+
+            body += f"""
+            <li style="margin-bottom:8px;color:#d1d5db;">
+                {escape(assumption)}
+            </li>
+            """
+
+        body += "</ul>"
+
+        html += card("⚠️ Assumptions", body)
 
     return html
 
 
-# ==========================================================
-# Validation
-# ==========================================================
+def format_copywriter(report: dict) -> str:
 
-def format_validation(report: dict) -> str:
+    html = f"""
+    <h2 style="color:#ffffff;">✍️ Campaign Theme</h2>
 
-    validation = report["campaign"]["validation"]
-
-    # ألوان معدلة للدارك مود
-    color = "#22c55e" # أخضر أزهى شوي عشان الدارك مود
-
-    if validation["status"] != "passed":
-        color = "#ef4444" # أحمر أزهى
-
-    body = f"""
-
-    <p style="margin-bottom:16px;">{badge(validation["status"].upper(), color)}</p>
-
+    <p style="color:#d1d5db; margin-bottom:24px;">
+        {escape(report.get("campaign_theme", ""))}
+    </p>
     """
 
-    if validation["issues"]:
+    posts = report.get("posts", [])
 
-        body += "<ul style='padding-left:20px;'>"
+    if not posts:
+        return html + card(
+            "No Posts",
+            "<p style='color:#9ca3af;'>No posts generated.</p>"
+        )
 
-        for issue in validation["issues"]:
+    for post in posts:
 
-            body += f"<li style='color:#fca5a5; margin-bottom:8px;'>{escape(issue)}</li>" # لون أحمر فاتح للمشاكل
+        hashtags = " ".join(post.get("hashtags", []))
 
-        body += "</ul>"
+        body = f"""
+        <div style="margin-bottom:16px;">
+            {badge(post.get("platform", "Unknown"))}
+        </div>
 
-    else:
+        <p><b style="color:#ffffff;">Type</b><br>
+        <span style="color:#9ca3af;">{escape(post.get("post_type", ""))}</span></p>
 
-        body += "<p style='color:#86efac;'>No issues detected. Everything looks great!</p>" # لون أخضر فاتح
+        <p><b style="color:#ffffff;">Headline</b></p>
+        <p style="color:#ffffff;font-size:18px;font-weight:600;">
+            {escape(post.get("headline", ""))}
+        </p>
 
-    return card("Validation", body)
+        <p><b style="color:#ffffff;">Caption</b></p>
+
+        <div style="
+            background:#111827;
+            padding:14px;
+            border-radius:10px;
+            border:1px solid #374151;
+            white-space:pre-wrap;
+            color:#d1d5db;
+            line-height:1.7;
+        ">
+{escape(post.get("caption", ""))}
+        </div>
+
+        <p style="margin-top:16px;">
+            <b style="color:#ffffff;">Hashtags</b>
+        </p>
+
+        <p style="color:#60a5fa;">
+            {escape(hashtags)}
+        </p>
+
+        <p><b style="color:#ffffff;">CTA</b></p>
+
+        <p style="color:#d1d5db;">
+            {escape(post.get("cta", ""))}
+        </p>
+        """
+
+        html += card(
+            f"{post.get('platform', 'Unknown')} Post",
+            body,
+        )
+
+    return html
+
