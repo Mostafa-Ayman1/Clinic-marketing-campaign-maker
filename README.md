@@ -1,144 +1,134 @@
 # 🚀 AI Marketing Campaign Generator
 
-An AI-powered marketing campaign generator built using **Agentic AI** principles.
+An AI-powered marketing campaign generator built using **Agentic AI**, where multiple specialized AI agents collaborate to create a complete marketing campaign from a single user request.
 
-The system uses an **Orchestrator Agent** to coordinate multiple specialized AI agents, while leveraging **Parallelization** to execute independent tasks concurrently, reducing latency and improving efficiency.
+The project demonstrates how to build scalable AI workflows using the **Orchestrator** and **Parallelization** design patterns to coordinate multiple agents efficiently.
 
 ---
 
-# 🏗️ Architecture
+# ✨ Features
+
+- 🔍 AI-powered market research
+- 📅 Automatic campaign planning
+- ✍️ AI-generated marketing copy
+- ⚡ Parallel execution for faster responses
+- 🎯 Structured JSON communication between agents
+- 🖥️ Interactive Gradio dashboard
+- 📝 Execution logging for debugging
+
+---
+
+# 🏗️ System Architecture
 
 ```text
-                    User Request
+                      User Request
                           │
                           ▼
-                  Orchestrator Agent
+                🧠 Orchestrator Agent
                           │
-                          ▼
-                  🔍 Research Agent
-                          │
-             Structured Research Output
-                          │
-          ┌───────────────┴───────────────┐
-          │                               │
-          ▼                               ▼
-   📅 Planner Agent              ✍️ Copywriter Agent
-       (Parallel)                    (Parallel)
-          │                               │
-          └───────────────┬───────────────┘
-                          ▼
-                 ✅ Synthesizer Agent
-                          │
-                          ▼
-                Final Marketing Campaign
+         ┌────────────────┼────────────────┐
+         │                │                │
+         ▼                ▼                ▼
+ Research Task     Planner Task    Copywriter Task
+         │
+         ▼
+   🔍 Research Agent
+         │
+ Structured Research
+         │
+         ├──────────────────────────┐
+         │                          │
+         ▼                          ▼
+📅 Planner Agent            ✍️ Copywriter Agent
+      (Parallel)                 (Parallel)
+         │                          │
+         └──────────────┬───────────┘
+                        ▼
+              HTML Formatter + UI
 ```
 
 ---
 
-# 🎯 Design Patterns Used
+# 🎯 AI Design Patterns
 
-## 1. Orchestrator Pattern
+## 🧠 Orchestrator Pattern
 
-The workflow is controlled by a dedicated **Orchestrator Agent**.
+The Orchestrator Agent is responsible for:
 
-Responsibilities include:
+- Understanding the user's request
+- Breaking the request into specialized tasks
+- Generating independent instructions for each agent
+- Dispatching tasks to the appropriate AI agents
+- Coordinating execution order
+- Managing dependencies
+- Collecting the outputs
 
-- Managing the execution order
-    
-- Passing structured outputs between agents
-    
-- Coordinating dependencies
-    
-- Aggregating the final result
-    
-
-Instead of allowing agents to communicate directly, the Orchestrator acts as the single coordinator of the workflow.
+The agents never communicate directly with each other. Every interaction is managed through the Orchestrator.
 
 ---
 
-## 2. Parallelization Pattern
+## ⚡ Parallelization Pattern
 
-Once the Research Agent finishes, two independent tasks are executed simultaneously:
+Only the Research Agent has an execution dependency.
 
-- Planner Agent
-    
-- Copywriter Agent
-    
-
-Using:
+Once research is complete, both the Planner Agent and Copywriter Agent become independent and are executed concurrently using Python's asyncio.
 
 ```python
-await asyncio.gather(
-    planner_agent(...),
-    copywriter_agent(...)
+planner_result, copywriter_result = await asyncio.gather(
+    planner_agent(planner_input),
+    copywriter_agent(copywriter_input),
 )
 ```
 
-This significantly reduces total execution time compared to sequential execution.
+Running these agents concurrently significantly reduces total execution time compared to sequential execution.
 
 ---
 
 # 🤖 AI Agents
 
-### 🔍 Research Agent
+## 🔍 Research Agent
 
 Responsible for:
 
-- Web research
-    
-- Market insights
-    
+- Market research
+- Competitor analysis
+- Audience insights
 - Marketing opportunities
-    
-- Constraints extraction
-    
+- Business constraints
+- Structured research output
 
 ---
 
-### 📅 Planner Agent
+## 📅 Planner Agent
 
-Responsible for:
+Transforms research into a marketing strategy.
 
-- Campaign timeline
-    
-- Publishing schedule
-    
-- Platform planning
-    
-- Campaign organization
-    
+Responsibilities:
+
+- Campaign stages
+- Channel strategy
+- Content calendar
+- Content briefs
+- KPIs
+- Campaign assumptions
 
 ---
 
-### ✍️ Copywriter Agent
+## ✍️ Copywriter Agent
 
-Responsible for:
+Creates campaign content based on the research and planning.
+
+Responsibilities:
 
 - Headlines
-    
 - Captions
-    
+- Social media posts
 - Hashtags
-    
 - Call-to-actions
-    
 
 ---
 
-### ✅ Synthesizer Agent
-
-Responsible for:
-
-- Combining outputs
-    
-- Validating consistency
-    
-- Producing the final structured campaign
-    
-
----
-
-# ⚡ Workflow
+# ⚙️ Workflow
 
 ```text
 User Request
@@ -154,44 +144,129 @@ asyncio.gather(...)
 Planner  Copywriter
  └────┬────┘
       ▼
-Synthesizer
+Campaign Formatter
       ▼
 Gradio Dashboard
 ```
 
 ---
 
-# 🛠️ Technologies
+# 🛠️ Tech Stack
 
 - Python
-    
 - Gradio
-    
 - OpenAI SDK
-    
 - Alibaba Qwen
-    
 - DuckDuckGo Search
-    
 - asyncio
-    
 
 ---
 
-# 🧩 AI Engineering Concepts
+# 📂 Project Structure
+
+```text
+marketing-campaign-generator/
+│
+├── agents/
+│   ├── orchestrator.py
+│   ├── researcher.py
+│   ├── planner.py
+│   └── copywriter.py
+│
+├── prompts/
+│   ├── copywriter_prompt.txt
+│   ├── orchestrator_prompt.txt
+│   ├── planner_prompt.txt
+│   └── researcher_prompt.txt
+│
+├── services/
+│   └── openai_client.py
+│
+├── ui/
+│   └── gradio_ui.py
+│ 
+├── utils/
+│   ├── formatter.py
+│   ├── logger.py
+│   └── helpers.py
+│
+├── app.py
+├── config.py
+├── log.txt
+├── requirements.txt
+└── .env.example
+```
+
+---
+
+# 🚀 Installation
+
+```bash
+git clone https://github.com/yourusername/ai-marketing-campaign-generator.git
+
+cd ai-marketing-campaign-generator
+```
+
+Create a virtual environment:
+
+```bash
+python -m venv .venv
+```
+
+Activate it:
+
+Windows
+
+```bash
+.venv\Scripts\activate
+```
+
+Linux / macOS
+
+```bash
+source .venv/bin/activate
+```
+
+Install dependencies:
+
+```bash
+pip install -r requirements.txt
+```
+
+Create your environment file:
+
+```bash
+cp .env.example .env
+```
+
+Add your API keys.
+
+Run the application:
+
+```bash
+python app.py
+```
+
+---
+
+# 🔑 Environment Variables
+
+```env
+OPENAI_API_KEY=your_key
+ALIBABA_API_KEY=your_key
+```
+
+---
+
+# 💡 AI Engineering Concepts Demonstrated
 
 - Agentic AI
-    
 - Multi-Agent Systems
-    
-- Prompt Engineering
-    
-- Structured JSON Communication
-    
 - Orchestrator Pattern
-    
 - Parallelization Pattern
-    
+- Prompt Engineering
+- Structured JSON Communication
 - Async Programming
-    
 - Workflow Automation
+
+---
